@@ -1,0 +1,31 @@
+
+planning_plugins:
+  - pilz_industrial_motion_planner/CommandPlanner
+# The order of the elements in the adapter corresponds to the order they are processed by the motion planning pipeline.
+request_adapters:
+  - default_planning_request_adapters/ValidateWorkspaceBounds
+  - default_planning_request_adapters/CheckStartStateBounds
+  - default_planning_request_adapters/CheckStartStateCollision
+
+
+
+response_adapters:
+  # if AddTimeOptimalParametrization is active, then trajectory gets rescaled and no longer
+  # - cartesian movement limits 
+  # Post-Plan overwrite em if active
+  #- default_planning_response_adapters/AddTimeOptimalParameterization
+  - default_planning_response_adapters/ValidateSolution
+  - default_planning_response_adapters/DisplayMotionPath
+
+default_planner_config: PTP
+capabilities: >-
+    pilz_industrial_motion_planner/MoveGroupSequenceAction
+    pilz_industrial_motion_planner/MoveGroupSequenceService
+
+
+arm:
+  default_planner_config: PTP
+  planner_configs:
+    - PTP     # point-to-point
+    - LIN     # linear Cartesian
+    - CIRC    # circular Cartesian

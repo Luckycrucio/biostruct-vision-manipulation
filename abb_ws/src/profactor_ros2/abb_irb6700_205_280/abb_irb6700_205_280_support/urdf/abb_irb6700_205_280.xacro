@@ -1,0 +1,88 @@
+<?xml version="1.0" ?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro" name="abb_irb6700_205_280">
+  <!-- CONFIG -->
+  <xacro:arg name="use_fake_hardware" default="true"/>
+  <xacro:property name="use_fake_hardware" value="$(arg use_fake_hardware)"/>
+  <!-- abb_ros2 -->
+  <xacro:arg name="rws_ip" default="None"/>
+  <xacro:property name="rws_ip" value="$(arg rws_ip)"/>
+  <xacro:arg name="rws_port" default="80"/>
+  <xacro:property name="rws_port" value="$(arg rws_port)"/>
+  
+  <!-- Robot description -->
+  <xacro:include filename="$(find abb_irb6700_205_280_support)/urdf/abb_irb6700_205_280_macro.xacro"/>
+  <xacro:abb_irb6700_205_280 prefix=""/>
+
+  <!-- TOOL -->
+
+  <!-- ProPoint Draping Gripper (Amura) -->
+
+  <xacro:macro name="amura_gripper" params="prefix">
+  <link name="${prefix}tool_gripper">
+    <visual>
+      <origin xyz="0 0 0" rpy="${pi} 0 ${-pi/2}"/>
+      <geometry>
+        <mesh filename="package://abb_irb6700_205_280_support/meshes/ProPoint_gripper_20260128/251271_Gripper_Amura_20260128_STL.stl"
+              scale="1e-4 1e-4 1e-4"/>
+      </geometry>
+      <material name="white"/>
+    </visual> 
+    <collision> 
+      <origin xyz="0 0 0" rpy="${pi} 0 ${-pi/2}"/>
+      <geometry>
+        <mesh filename="package://abb_irb6700_205_280_support/meshes/ProPoint_gripper_20260128/Collision_251271_Gripper_Amura_20260128_STL.stl"
+              scale="1e-4 1e-4 1e-4"/>
+      </geometry>
+      <material name="white"/>
+    </collision>
+  </link>
+  <joint name="${prefix}flange_tool_gripper" type="fixed">
+    <origin xyz="0 0 0" rpy="0 0 0" />
+    <parent link="${prefix}tool0" />
+    <child link="${prefix}tool_gripper" />
+  </joint>
+  </xacro:macro>
+  <xacro:amura_gripper prefix=""/>
+
+
+
+  <!-- Camera Mount and Camera tool (Robotics Lab) -->
+  
+  <!-- <xacro:macro name="amura_gripper" params="prefix">
+  <link name="${prefix}tool_gripper">
+    <visual>
+      <origin xyz="${-0.089*cos(15.18*pi/180)} ${-0.089*sin(15.18*pi/180)} 0.01"
+        rpy="0 0 ${15.18*pi/180}"/>
+      <geometry>
+        <box size="0.135 0.130 0.210"/>
+      </geometry>
+      <material name="white"/>
+    </visual> 
+    <collision>
+      <origin xyz="${-0.089*cos(15.18*pi/180)} ${-0.089*sin(15.18*pi/180)} 0.01"
+        rpy="0 0 ${15.18*pi/180}"/>
+      <geometry>
+        <box size="0.135 0.130 0.210"/>
+      </geometry>
+      <material name="white"/>  
+    </collision>
+  </link>
+  <joint name="${prefix}flange_tool_gripper" type="fixed">
+    <origin xyz="0 0 0.1" rpy="0 0 0" />
+    <parent link="${prefix}tool0" />
+    <child link="${prefix}tool_gripper" />
+  </joint>
+  </xacro:macro>
+  <xacro:amura_gripper prefix=""/> -->
+
+
+  <!-- ros2_control -->
+  <xacro:include filename="$(find abb_irb6700_205_280_support)/urdf/abb_irb6700_205_280.ros2_control.xacro" />
+  <!-- name="ABBMultiInterfaceHardware" -->
+  <xacro:abb_ros2_control
+    name="abb_irb6700_205_280_hw"
+    prefix=""
+    use_fake_hardware="${use_fake_hardware}"
+    rws_ip="${rws_ip}"
+    rws_port="${rws_port}"/>
+</robot>

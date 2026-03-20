@@ -1,0 +1,45 @@
+<robot xmlns:xacro="http://ros.org/wiki/xacro" name="abb_irb6700_205_280">
+  <xacro:include filename="$(find abb_irb6700_205_280_support)/urdf/abb_irb6700_205_280_macro.xacro"/>
+  <xacro:abb_irb6700_205_280 prefix=""/>
+
+
+  <joint name="$joint_ee" type="fixed">
+    <origin xyz="0.51 0 0" rpy="0 0 0"/>
+    <parent link="link_6"/>
+    <child link="gripper"/>
+  </joint>
+  
+  <link name="gripper">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1"/>
+      <inertia ixx="100"  ixy="0"  ixz="0" iyy="100" iyz="0" izz="100" />q
+    </inertial>
+
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <!--box size=".1 .1 .1" /-->
+        <box size="1 1.7 .9" />
+      </geometry>
+      <material name="Cyan">
+        <color rgba="0 1.0 1.0 1"/>
+      </material>
+    </visual>
+
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <box size="1 1.7 .9" />
+      </geometry>
+    </collision>
+ </link>
+ 
+   <joint name="$joint_deformation" type="fixed">
+    <origin xyz="0.78 0.744 0" rpy="0 1.5707 0"/>
+    <parent link="link_6"/>
+    <child link="grasping"/>
+  </joint>
+  
+   <link name="grasping"/>
+</robot>

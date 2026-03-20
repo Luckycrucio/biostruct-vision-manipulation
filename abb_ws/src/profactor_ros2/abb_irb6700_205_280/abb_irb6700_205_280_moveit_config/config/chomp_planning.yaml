@@ -1,0 +1,50 @@
+  planning_plugins:
+    - chomp_interface/CHOMPPlanner
+  # The order of the elements in the adapter corresponds to the order they are processed by the motion planning pipeline.
+  request_adapters:
+    - default_planning_request_adapters/ResolveConstraintFrames
+    - default_planning_request_adapters/ValidateWorkspaceBounds
+    - default_planning_request_adapters/CheckStartStateBounds
+    - default_planning_request_adapters/CheckStartStateCollision
+  response_adapters:
+    - default_planning_response_adapters/AddTimeOptimalParameterization
+  planning_time_limit: 60.0
+  max_iterations: 3000
+  max_iterations_after_collision_free: 200
+
+  # Costs
+  smoothness_cost_weight: 0.05
+  smoothness_cost_velocity: 0.0
+  smoothness_cost_acceleration: 1.0
+  smoothness_cost_jerk: 0.0
+  obstacle_cost_weight: 12.0
+
+  # Step size / conditioning
+  learning_rate: 0.003
+  joint_update_limit: 0.03
+  use_pseudo_inverse: true
+  pseudo_inverse_ridge_factor: 0.001
+  ridge_factor: 1e-6
+
+  # Clearance in tight passages
+  collision_clearance: 0.01
+  collision_threshold: 0.01
+
+  # Deterministic first
+  add_randomness: false
+  use_stochastic_descent: false
+  use_hamiltonian_monte_carlo: false
+
+  # Initialization
+  trajectory_initialization_method: "quintic-spline"  # OK if the seed already goes over the obstacle
+  enable_failure_recovery: true
+  max_recovery_attempts: 0       # disable auto retunes that raise learning_rate
+  animate_path: true
+  animate_endeffector: false
+
+
+
+
+  arm:
+    planner_configs:
+      - CHOMP

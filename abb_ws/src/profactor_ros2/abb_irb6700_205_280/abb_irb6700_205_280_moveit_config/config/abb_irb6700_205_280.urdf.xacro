@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="abb_irb6700_205_280">
+    
+    <!-- Import abb_irb6700_205_280 urdf file -->
+    <xacro:include filename="$(find abb_irb6700_205_280_support)/urdf/abb_irb6700_205_280.xacro" />
+
+</robot>

@@ -1,0 +1,230 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+<xacro:macro name="abb_irb6700_205_280" params="prefix">
+
+<!-- material list -->
+<material name="white">
+  <color rgba="1 1 1 1"/>
+</material>
+
+<material name="grey">
+  <color rgba=".7 .7 .7 1"/>
+</material>
+
+<material name="yellow">
+  <color rgba=".9 .9 0 0.2"/>
+</material>
+
+<!--  link list  -->
+<link name="${prefix}base_link">
+  <visual>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <geometry>
+      <mesh filename="package://abb_irb6700_205_280_support/meshes/irb6700_205_280/ManipulatorJoint0.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+    <material name="grey"/>
+  </visual>
+  <collision>
+  <origin xyz="0 0 0" rpy="0 0 0"/>
+  <geometry>
+  <mesh filename="package://abb_irb6700_205_280_support/meshes/irb6700_205_280/ManipulatorJoint0.stl" scale="0.001 0.001 0.001"/>
+  </geometry>
+    <material name="grey"/>
+  </collision>
+</link>
+
+<link name="${prefix}link_1">
+  <visual>
+  <origin xyz="0 0 -0.78" rpy="0 0 0"/>
+  <geometry>
+  <mesh filename="package://abb_irb6700_205_280_support/meshes/irb6700_205_280/ManipulatorJoint1.stl" scale="0.001 0.001 0.001"/>
+  </geometry>
+  <material name="white"/>
+  </visual>
+  <collision>
+  <origin xyz="0 0 -0.78" rpy="0 0 0"/>
+  <geometry>
+  <mesh filename="package://abb_irb6700_205_280_support/meshes/irb6700_205_280/ManipulatorJoint1.stl" scale="0.001 0.001 0.001"/>
+  </geometry>
+    <material name="white"/>
+  </collision>
+</link>
+
+<link name="${prefix}link_2">
+  <visual>
+  <origin xyz="-0.32 0 -0.78" rpy="0 0 0"/>
+  <geometry>
+  <mesh filename="package://abb_irb6700_205_280_support/meshes/irb6700_205_280/ManipulatorJoint2.stl" scale="0.001 0.001 0.001"/>
+  </geometry>
+    <material name="white"/>
+  </visual>
+  <collision>
+  <origin xyz="-0.32 0 -0.78" rpy="0 0 0"/>
+  <geometry>
+  <mesh filename="package://abb_irb6700_205_280_support/meshes/irb6700_205_280/ManipulatorJoint2.stl" scale="0.001 0.001 0.001"/>
+  </geometry>
+    <material name="white"/>
+  </collision>
+</link>
+
+<link name="${prefix}link_3">
+  <visual>
+  <origin xyz="-0.32 0 -2.06" rpy="0 0 0"/>
+  <geometry>
+  <mesh filename="package://abb_irb6700_205_280_support/meshes/irb6700_205_280/ManipulatorJoint3.stl" scale="0.001 0.001 0.001"/>
+  </geometry>
+    <material name="white"/>
+  </visual>
+  <collision>
+  <origin xyz="-0.32 0 -2.06" rpy="0 0 0"/>
+  <geometry>
+  <mesh filename="package://abb_irb6700_205_280_support/meshes/irb6700_205_280/ManipulatorJoint3.stl" scale="0.001 0.001 0.001"/>
+  </geometry>
+    <material name="white"/>
+  </collision>
+</link>
+
+<link name="${prefix}link_4">
+  <visual>
+  <origin xyz="-0.32 0 -2.26" rpy="0 0 0"/>
+  <geometry>
+  <mesh filename="package://abb_irb6700_205_280_support/meshes/irb6700_205_280/ManipulatorJoint4.stl" scale="0.001 0.001 0.001"/>
+  </geometry>
+    <material name="white"/>
+  </visual>
+  <collision>
+  <origin xyz="-0.32 0 -2.26" rpy="0 0 0"/>
+  <geometry>
+  <mesh filename="package://abb_irb6700_205_280_support/meshes/irb6700_205_280/ManipulatorJoint4.stl" scale="0.001 0.001 0.001"/>
+  </geometry>
+    <material name="white"/>
+  </collision>
+</link>
+
+<link name="${prefix}link_5">
+  <visual>
+  <origin xyz="-1.5025 0 -2.26" rpy="0 0 0"/>
+  <geometry>
+  <mesh filename="package://abb_irb6700_205_280_support/meshes/irb6700_205_280/ManipulatorJoint5.stl" scale="0.001 0.001 0.001"/>
+  </geometry>
+    <material name="white"/>
+  </visual>
+  <collision>
+  <origin xyz="-1.5025 0 -2.26" rpy="0 0 0"/>
+  <geometry>
+  <mesh filename="package://abb_irb6700_205_280_support/meshes/irb6700_205_280/ManipulatorJoint5.stl" scale="0.001 0.001 0.001"/>
+  </geometry>
+    <material name="white"/>
+  </collision>
+</link>
+
+<link name="${prefix}link_6">
+  <visual>
+  <origin xyz="-1.7025 0 -2.26" rpy="0 0 0"/> 
+  <geometry>
+  <mesh filename="package://abb_irb6700_205_280_support/meshes/irb6700_205_280/ManipulatorJoint6.stl" scale="0.001 0.001 0.001"/>
+  </geometry>
+    <material name="white"/>
+  </visual>
+  <collision>
+  <origin xyz="-1.7025 0 -2.26" rpy="0 0 0"/>
+  <geometry>
+  <mesh filename="package://abb_irb6700_205_280_support/meshes/irb6700_205_280/ManipulatorJoint6.stl" scale="0.001 0.001 0.001"/>
+  </geometry>
+    <material name="white"/>
+  </collision>
+</link>
+
+<!--  joint list -->
+
+<joint name="${prefix}joint_1" type="revolute">
+  <origin xyz="0 0 0.78" rpy="0 0 0"/>
+  <parent link="${prefix}base_link"/>
+  <child link="${prefix}link_1"/>
+  <axis xyz="0 0 1"/>
+  <limit lower="-${radians(170)}" upper="${radians(170)}" effort="0" velocity="${radians(110)}"/>
+</joint>
+
+<joint name="${prefix}joint_2" type="revolute">
+  <origin xyz="0.32 0 0" rpy="0 0 0"/>
+  <parent link="${prefix}link_1"/>
+  <child link="${prefix}link_2"/>
+  <axis xyz="0 1 0"/>
+  <limit lower="-${radians(65)}" upper="${radians(85)}" effort="0" velocity="${radians(110)}"/>
+</joint>
+
+<joint name="${prefix}joint_3" type="revolute">
+  <origin xyz="0 0 1.280" rpy="0 0 0"/>
+  <parent link="${prefix}link_2"/>
+  <child link="${prefix}link_3"/>
+  <axis xyz="0 1 0"/>
+  <limit lower="-${radians(180)}" upper="${radians(70)}" effort="0" velocity="${radians(110)}"/>
+</joint>
+
+<joint name="${prefix}joint_4" type="revolute">
+  <origin xyz="0 0 0.2" rpy="0 0 0"/>
+  <parent link="${prefix}link_3"/>
+  <child link="${prefix}link_4"/>
+  <axis xyz="1 0 0"/>
+  <limit lower="-${radians(300)}" upper="${radians(300)}" effort="0" velocity="${radians(190)}"/>
+</joint>
+
+<joint name="${prefix}joint_5" type="revolute">
+  <origin xyz="1.1825 0 0" rpy="0 0 0"/>
+  <parent link="${prefix}link_4"/>
+  <child link="${prefix}link_5"/>
+  <axis xyz="0 1 0"/>
+  <limit lower="-${radians(130)}" upper="${radians(130)}" effort="0" velocity="${radians(150)}"/>
+</joint>
+
+<joint name="${prefix}joint_6" type="revolute">
+  <origin xyz="0.2 0 0" rpy="0 0 0"/>
+  <parent link="${prefix}link_5"/>
+  <child link="${prefix}link_6"/>
+  <axis xyz="1 0 0"/>
+  <limit lower="-${radians(360)}" upper="${radians(360)}" effort="0" velocity="${radians(210)}"/>
+</joint>
+
+<!-- Standardised -->
+<!-- ROS-Industrial 'base' frame: base_link to ABB World Coordinates transform -->
+<link name="base"/>
+<joint name="${prefix}base_link-base" type="fixed">
+  <origin xyz="0 0 0" rpy="0 0 0"/>
+  <parent link="base"/>
+  <child link="${prefix}base_link"/>
+</joint>
+
+<!-- TODO review-->
+<!-- ROS-Industrial 'flange' frame: attachment point for EEF models -->
+<link name="${prefix}flange"/>
+<joint type="fixed" name="${prefix}joint_6-flange">
+  <origin xyz="0 0 0" rpy="0 0 0"/>
+  <parent link="${prefix}link_6"/>
+  <child link="${prefix}flange"/>
+</joint>
+
+<!-- TODO review-->
+<!-- ROS-Industrial 'tool0' frame: all-zeros tool frame -->
+<link name="${prefix}tool0" />
+<joint name="${prefix}link_6-tool0" type="fixed">
+  <origin xyz="0 0 0" rpy="0 ${radians(90)} 0" />
+  <parent link="${prefix}flange" />
+  <child link="${prefix}tool0" />
+</joint>
+
+
+<!-- ROS-Industrial 'tool_camera' frame: -->
+<!-- this was defined for the development phase with an unideal camera mount -->
+<!-- Define the new tool_camera frame as it will mounted in the ProPoint gripper -->
+<!-- Precision is not needed at all, it is just for the extrinsic calibration phase -->
+<!-- to make the camera always look at the calibration board. -->
+<link name="${prefix}tool_camera" />
+<joint name="${prefix}tool0-tool_camera" type="fixed">
+  <origin xyz="${-0.089*cos(15.18*pi/180)} ${-0.089*sin(15.18*pi/180)} 0.11"
+        rpy="0 0 ${15.18*pi/180}"/>
+  <parent link="${prefix}tool0" />
+  <child link="${prefix}tool_camera" />
+</joint>
+
+</xacro:macro>
+</robot>

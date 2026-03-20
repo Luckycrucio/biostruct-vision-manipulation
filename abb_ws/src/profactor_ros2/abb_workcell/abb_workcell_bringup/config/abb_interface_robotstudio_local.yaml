@@ -1,0 +1,11 @@
+description_package: abb_irb6700_205_280_support
+description_file: abb_irb6700_205_280.xacro
+
+moveit_config_package: abb_irb6700_205_280_moveit_config
+moveit_config_file: abb_irb6700_205_280.srdf
+
+rviz_config_package: abb_irb6700_205_280_moveit_config
+rviz_config_file: moveit.rviz
+
+rws_ip: 172.20.100.1
+rws_port: 80

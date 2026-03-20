@@ -1,0 +1,96 @@
+mqtt_client:
+  ros__parameters:
+    broker:
+      host: "localhost"        # or your broker IP
+      port: 1883
+
+    bridge:
+      mqtt2ros:
+        # MQTT topic to listen to
+        mqtt_topics:
+          - "vision/picking_pose"     
+          - "vision/calib_done_vision" 
+          - "coordinator/plan"
+          - "coordinator/termination"
+          - "coordinator/execution"
+          - "coordinator/plan_to_vision"
+          - "coordinator/calibration_trigger"
+          - "coordinator/save_pose"
+          - "planner/trajectories"
+
+        "vision/picking_pose":
+          ros_topic: "/picking_pose"  # ROS topic 
+          ros_type: "std_msgs/msg/String"
+          primitive: true            # primitive ROS
+        "vision/calib_done_vision":
+          ros_topic: "/calib_done_vision"  # ROS topic 
+          ros_type: "std_msgs/msg/String"
+          primitive: true            # primitive ROS
+        "coordinator/plan":
+          ros_topic: "/plan"        
+          ros_type: "std_msgs/msg/String"
+          primitive: true             # primitive ROS
+        "coordinator/termination":
+          ros_topic: "/termination"        
+          ros_type: "std_msgs/msg/String"
+          primitive: true             # primitive ROS
+        "coordinator/execution":
+          ros_topic: "/execution"        
+          ros_type: "std_msgs/msg/String"
+          primitive: true             # primitive ROS
+        "coordinator/plan_to_vision":
+          ros_topic: "/to_vision"        
+          ros_type: "std_msgs/msg/String"
+          primitive: true             # primitive ROS
+        "coordinator/calibration_trigger":
+          ros_topic: "/calibration_trigger"        
+          ros_type: "std_msgs/msg/String"
+          primitive: true             # primitive ROS
+        "planner/trajectories":
+          ros_topic: "/trajectories_to_execute"   # choose a ROS topic
+          ros_type: "std_msgs/msg/String"
+          primitive: true
+        "coordinator/save_pose":
+          ros_topic: "/save_pose"   # choose a ROS topic
+          ros_type: "std_msgs/msg/String"
+          primitive: true
+
+      ros2mqtt:
+        # MQTT topic to publish to
+        ros_topics:
+          - "/ready"
+          - "/trajectories" 
+          - "/feedback"
+          - "/tcp_transform"
+          - "/estimate_ext"
+
+        "/ready":
+          mqtt_topic: "planner/ready"
+          ros_type: "std_msgs/msg/String"
+          primitive: true   # send raw string (JSON)
+          qos: 1 # At least once
+
+        "/trajectories":
+          mqtt_topic: "planner/trajectories"
+          ros_type: "std_msgs/msg/String"
+          primitive: true   # send raw string (JSON)
+          qos: 1 # At least once
+
+        "/feedback":
+          mqtt_topic: "executor/feedback"
+          ros_type: "std_msgs/msg/String"
+          primitive: true   # send raw string (JSON)
+          qos: 1 # At least once
+
+        "/tcp_transform":
+          mqtt_topic: "planner/tcp_transform"
+          ros_type: "std_msgs/msg/String"
+          primitive: true   # send raw string (JSON)
+          qos: 1 # At least once
+
+        "/estimate_ext":
+          mqtt_topic: "planner/estimate_ext"
+          ros_type: "std_msgs/msg/String"
+          primitive: true   # send raw string (JSON)
+          qos: 1 # At least once
+
