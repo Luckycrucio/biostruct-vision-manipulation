@@ -88,8 +88,8 @@ gt_pixel_length = cv2.imread(gt_paths[0], cv2.IMREAD_GRAYSCALE).shape[0] # Lengt
 # [160.33 mm] big one
 # PICKING POSE DEFINITION WRT GT [da rivedere]
 # --- starting pose in matched_prealigned_gt ---
-p  = np.array([500, 500], dtype=np.float32)
-v  = np.array([np.sin(np.pi/6), np.cos(np.pi/6)], dtype=np.float32)  # unit dir (wrt +y)
+p_gt = np.array([500, 500], dtype=np.float32)
+v_gt = np.array([np.sin(np.pi/6), np.cos(np.pi/6)], dtype=np.float32)  # unit dir (wrt +y)
 
 # --------- typed struct to encode 6D poses ----------
 class PlyPose9D(msgspec.Struct):
@@ -322,7 +322,7 @@ def calibration_step(
     mqtt_calibration_event.clear()
     return disp
 
-
+# --------- Final Estimation ----------
 def estimate_extrinsics(ecalib_path = "T_cam2tcp.yaml"):
     n_tb = len(R_tcp2base)
     n_tc = len(R_target2cam)
@@ -536,7 +536,7 @@ def roiSegmentation(gray, roi):
 
     return segmented_ply
 
-
+# --------- Extract edges from convex-filled-shape ----------
 def plyEdgeExtraction(refined_mask: np.ndarray, kernel_size: int = 3) -> np.ndarray:
     """
     Best-practice 1px edge extraction for Chamfer/DT:
@@ -567,6 +567,7 @@ def plyEdgeExtraction(refined_mask: np.ndarray, kernel_size: int = 3) -> np.ndar
     return edges
 
 
+# --------- PCA-based Alignment ----------
 def symChamfer(aligned_gt_u8: np.ndarray, query_bin: np.ndarray, DT_query: np.ndarray) -> float:
         aligned = (aligned_gt_u8 > 0).astype(np.uint8) * 255
         query_bin = (query_bin > 0).astype(np.uint8) * 255
@@ -580,7 +581,6 @@ def symChamfer(aligned_gt_u8: np.ndarray, query_bin: np.ndarray, DT_query: np.nd
             return float("inf")
 
         return float(np.mean(DT_gt[q_mask]) + np.mean(DT_query[gt_mask]))
-
 
 def posePCA(img_u8: np.ndarray, min_pts: int = 10, ellipse_scale: float = 1.0,):
         ys, xs = np.where(img_u8 > 0)
@@ -712,6 +712,8 @@ def PCAlignment(
 
     return gt_aligned_best, M_best, overlay, chamfer_best
 
+
+# --------- ORB-based Alignment ----------
 def _enforce_rigid_affine(M: np.ndarray) -> np.ndarray:
     """
     Convert a 2x3 affine/similarity matrix into the closest rigid transform (R,t),
@@ -764,12 +766,22 @@ def ORBalignemnt(
     g_feat = cv2.GaussianBlur(g_feat, (5, 5), 0)
 
     q_corners = cv2.goodFeaturesToTrack(
-        q_feat, maxCorners=max_corners, qualityLevel=0.01,
-        minDistance=10, blockSize=harris_kernel_size, useHarrisDetector=True, k=0.04
+        q_feat,
+        maxCorners=max_corners,
+        qualityLevel=0.01,
+        minDistance=10,
+        blockSize=int(harris_kernel_size),
+        useHarrisDetector=True,
+        k=0.04
     )
     g_corners = cv2.goodFeaturesToTrack(
-        g_feat, maxCorners=max_corners, qualityLevel=0.01,
-        minDistance=10, blockSize=harris_kernel_size, useHarrisDetector=True, k=0.04
+        g_feat,
+        maxCorners=max_corners,
+        qualityLevel=0.01,
+        minDistance=10,
+        blockSize=int(harris_kernel_size),
+        useHarrisDetector=True,
+        k=0.04
     )
 
     overlay_init = np.zeros((H, W, 3), np.uint8)
@@ -777,7 +789,7 @@ def ORBalignemnt(
     overlay_init[..., 2] = g_bin
 
     if q_corners is None or g_corners is None:
-        return overlay_init, None, overlay_init.copy(), float("inf")
+        return overlay_init, None, overlay_init.copy(), float("inf"), None
 
     q_corners = q_corners.reshape(-1, 2).astype(np.float32)
     g_corners = g_corners.reshape(-1, 2).astype(np.float32)
@@ -785,12 +797,17 @@ def ORBalignemnt(
     kp_q = [cv2.KeyPoint(float(x), float(y), 31.0) for (x, y) in q_corners]
     kp_g = [cv2.KeyPoint(float(x), float(y), 31.0) for (x, y) in g_corners]
 
-    orb = cv2.ORB_create(nfeatures=orb_nfeatures, fastThreshold=5, edgeThreshold=5, patchSize=31)
+    orb = cv2.ORB_create(
+        nfeatures=orb_nfeatures,
+        fastThreshold=5,
+        edgeThreshold=5,
+        patchSize=31
+    )
     kp_q, des_q = orb.compute(q_feat, kp_q)
     kp_g, des_g = orb.compute(g_feat, kp_g)
 
     if des_q is None or des_g is None or len(kp_q) < 2 or len(kp_g) < 2:
-        return overlay_init, None, overlay_init.copy(), float("inf")
+        return overlay_init, None, overlay_init.copy(), float("inf"), None
 
     bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
     matches = bf.match(des_g, des_q)  # GT -> Query
@@ -798,25 +815,22 @@ def ORBalignemnt(
     matches = matches[:min(keep_best_matches, len(matches))]
 
     for m in matches:
-        xg, yg = kp_g[m.queryIdx].pt  # GT point
-        xq, yq = kp_q[m.trainIdx].pt  # Query point
+        xg, yg = kp_g[m.queryIdx].pt
+        xq, yq = kp_q[m.trainIdx].pt
 
         pg = (int(round(xg)), int(round(yg)))
         pq = (int(round(xq)), int(round(yq)))
 
-        # line connecting the correspondence
         cv2.line(overlay_init, pg, pq, (255, 255, 255), 1, cv2.LINE_AA)
-
-        # endpoints (keep your circles)
         cv2.circle(overlay_init, pg, 15, (0, 0, 255), -1)   # GT
         cv2.circle(overlay_init, pq, 15, (0, 255, 0), -1)   # Query
 
     src = np.float32([kp_g[m.queryIdx].pt for m in matches])
     dst = np.float32([kp_q[m.trainIdx].pt for m in matches])
 
-    # estimate similarity (robust), then clamp to rigid
     M, inliers = cv2.estimateAffinePartial2D(
-        src, dst,
+        src,
+        dst,
         method=cv2.RANSAC,
         ransacReprojThreshold=ransac_thresh_px,
         maxIters=5000,
@@ -824,11 +838,18 @@ def ORBalignemnt(
         refineIters=20,
     )
     if M is None:
-        return overlay_init, None, overlay_init.copy(), float("inf")
+        return overlay_init, None, overlay_init.copy(), float("inf"), None
 
-    M = _enforce_rigid_affine(M)  # <-- removes scaling
+    M = _enforce_rigid_affine(M)  # removes scaling
 
-    gt_aligned = cv2.warpAffine(g_bin, M, (W, H), flags=cv2.INTER_NEAREST, borderValue=0)
+    # GT transformed according to M
+    gt_aligned = cv2.warpAffine(
+        g_bin,
+        M,
+        (W, H),
+        flags=cv2.INTER_NEAREST,
+        borderValue=0
+    )
 
     overlay_final = np.zeros((H, W, 3), np.uint8)
     overlay_final[..., 1] = q_bin
@@ -844,9 +865,9 @@ def ORBalignemnt(
     if np.any(q_mask) and np.any(g_mask):
         chamfer = float(np.mean(DT_gt[q_mask]) + np.mean(DT_q[g_mask]))
 
-    return overlay_init, M, overlay_final, chamfer
+    return overlay_init, M, overlay_final, chamfer, gt_aligned
 
-
+# --------- ICP Refinement ----------
 def ICPrefinement(
     target_bin: np.ndarray,
     source_bin: np.ndarray,
@@ -1202,7 +1223,7 @@ def ICPrefinement(
 
     return R, t, overlay, chamfer_cost
 
-
+# [UNUSED]
 def estimateQueryScale(tl, tr, br, bl,
                                   width_m,
                                   length_m,
@@ -1260,6 +1281,8 @@ def estimateQueryScale(tl, tr, br, bl,
 
     return float(np.sum(weights * scales) / np.sum(weights))
 
+
+# # --------- Draw Table Ref on query ----------
 def tableAprilTagOrientation(img_bgr, rvec, center=None, axis_len=100, thickness=3):
     """
     Draw y axis of the detected Apriltag in the table
@@ -1600,11 +1623,37 @@ def run_pipeline(
     print(matched_id, "chamfer:", best_score)
 
 
+    # -------------------------
+    # ORB MATCHING LOOP
+    # -------------------------
+
+    orb_overlay_init, orb_M, orb_overlay_final, orb_chamfer, orb_gt_aligned = ORBalignemnt(matched_prealigned_gt, query)
+
+    print("\n[ORB-matching]")
+    print("ORB chamfer:", orb_chamfer)
+    orb_overlay_init = display_shapes(orb_overlay_init, w, h, 0.5)
+    if orb_overlay_init is not None:
+                save_path = os.path.join(
+                    project_root, "data/saved_images", 
+                    f"Image_ORB_{matched_id}_session_{session_timestamp}.png"
+                )
+                cv2.imwrite(save_path, orb_overlay_init)
+
+    if orb_chamfer > best_score:
+        print("\n[ORB-matching]: Divergence detected, back to the PCA estimate")
+        orb_gt_aligned = matched_prealigned_gt
+        # reset orb_M to identity (rigid 2D affine)
+        orb_M = np.array([
+            [1.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0]
+        ], dtype=np.float32)
+
+
     # ------------ ICP Final Alignment ------------
 
     # Align partia shape to full shape, then invert transformation
     R, t, final_overlay, chamfer = ICPrefinement(
-        target_bin = matched_prealigned_gt, source_bin = query, 
+        target_bin = orb_gt_aligned, source_bin = query, 
         DT_query = DT_Query
     )
 
@@ -1629,14 +1678,17 @@ def run_pipeline(
     # get the final transform
     R_initial = T[:, :2]   # 2x2
     t_initial = T[:, 2]    # 2-vector
-    R_final = R_inv @ R_initial
-    t_final = R_inv @ t_initial + t_inv
+    R_orb = orb_M[:, :2]
+    t_orb = orb_M[:, 2]
+
+    R_final = R_inv @ R_orb @ R_initial
+    t_final = R_inv @ (R_orb @ t_initial + t_orb) + t_inv
 
     # Table orientation 
-    v = bl - tl            # direction vector
-    norm = np.linalg.norm(v.astype(np.float32))
+    v_table = bl - tl            # direction vector
+    norm = np.linalg.norm(v_table.astype(np.float32))
     if norm > 0:
-        v_unit = v / norm
+        v_unit = v_table / norm
     else:
         v_unit = np.array([0.0, 0.0], dtype=np.float32)
     table_angle = np.arctan2(v_unit[0], v_unit[1])
@@ -1660,11 +1712,13 @@ def run_pipeline(
     # p_tbl1 = tuple(np.round(tl + L * tbl_dir).astype(int))
     # cv2.arrowedLine(q_vis, p_tbl0, p_tbl1, (0, 255, 0), 2, tipLength=0.25)
 
-    p_new = R_final @ p + t_final
-    v_new = R_final @ v
+    # GT optimal picking
+    p_new = R_final @ p_gt + t_final
+    v_new = R_final @ v_gt 
     # --- draw points + arrows ---
-    p0  = tuple(np.round(p).astype(int))
-    p1  = tuple(np.round(p + (L * v)).astype(int))
+    p0  = tuple(np.round(p_gt).astype(int))
+    v_norm  = v_gt / (np.linalg.norm(v_gt) + 1e-12)
+    p1  = tuple(np.round(p_gt + (L * v_norm)).astype(int))
     p0n = tuple(np.round(p_new).astype(int))
     vn  = v_new / (np.linalg.norm(v_new) + 1e-12)
     p1n = tuple(np.round(p_new + (L * vn)).astype(int))
@@ -1723,6 +1777,7 @@ def run_pipeline(
 
     # Reset activation flag after the pipeline
     mqtt_activation_event.clear()
+
     return disp, proc # proc is saved, disp is shown
 
 def display_shapes(shape, w, h,time):
@@ -1814,7 +1869,6 @@ if __name__ == "__main__":
 
     print_ui_controls()
 
-    #cv2.namedWindow("AprilTags + YOLO", cv2.WINDOW_NORMAL)
 
     try:
         while True:
