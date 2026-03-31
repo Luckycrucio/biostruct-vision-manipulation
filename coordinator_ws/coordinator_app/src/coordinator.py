@@ -42,7 +42,7 @@ encoder = msgspec.json.Encoder() # pose encoder for serialization
 lock = threading.Lock()
 trajectory_timeout = 5.0
 execution_feedback_timeout = 25.0
-vision_detection_timeout = 60.0 
+vision_detection_timeout = 300.0 
 saving_pose_timeout = 2.0
 
 # --------- typed struct to encode the Ply ID ----------

@@ -703,8 +703,8 @@ int main(int argc, char * argv[])
                     // Load the camera pose (estimated from estrinsics)
 
                     // Load rotation + translation from YAML
-                    const std::string yaml_path = ws_folder.string() + 
-                                "/src/profactor_ros2/vision_ws/vision_app/calib/extrinsics/T_cam2tcp_10_00_29__03022026.yaml";
+                    const std::string yaml_path = ws_folder.parent_path().string() + 
+                                "/vision_ws/vision_app/calib/extrinsics/T_cam2tcp_10_00_29__03022026.yaml";
 
                     cv::FileStorage fs(yaml_path, cv::FileStorage::READ);
                     if (!fs.isOpened())

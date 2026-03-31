@@ -88,8 +88,8 @@ gt_pixel_length = cv2.imread(gt_paths[0], cv2.IMREAD_GRAYSCALE).shape[0] # Lengt
 # [160.33 mm] big one
 # PICKING POSE DEFINITION WRT GT [da rivedere]
 # --- starting pose in matched_prealigned_gt ---
-p_gt = np.array([500, 500], dtype=np.float32)
-v_gt = np.array([np.sin(np.pi/6), np.cos(np.pi/6)], dtype=np.float32)  # unit dir (wrt +y)
+p_gt = np.array([1417, 2834], dtype=np.float32)
+v_gt = np.array([np.sin(-np.pi/4), np.cos(-np.pi/4)], dtype=np.float32)  # unit dir (wrt +y)
 
 # --------- typed struct to encode 6D poses ----------
 class PlyPose9D(msgspec.Struct):
@@ -738,12 +738,12 @@ def _enforce_rigid_affine(M: np.ndarray) -> np.ndarray:
 def ORBalignemnt(
     query: np.ndarray,
     gt: np.ndarray,
-    max_corners: int = 80,
-    dilate_iters: int = 2,
-    orb_nfeatures: int = 500,
-    keep_best_matches: int = 40,
-    ransac_thresh_px: float = 3.0,
-    harris_kernel_size: int = 7.0,
+    max_corners: int = 12,
+    dilate_iters: int = 1,
+    orb_nfeatures: int = 50,
+    keep_best_matches: int = 4,
+    ransac_thresh_px: float = 0.75,
+    harris_kernel_size: int = 9,
 ):
     q_bin = (query == 255).astype(np.uint8) * 255
     g_bin = (gt    == 255).astype(np.uint8) * 255
@@ -1282,6 +1282,42 @@ def estimateQueryScale(tl, tr, br, bl,
     return float(np.sum(weights * scales) / np.sum(weights))
 
 
+
+def crop_gt_bottom_to_match_query_yspan(gt, query):
+    """
+    Crop the lower part of GT foreground so that its y-span matches QUERY's y-span.
+
+    Assumptions:
+    - gt and query have the same shape
+    - both contain at least one non-black pixel
+    - foreground = pixel > 0
+    """
+
+    q_mask = query > 0
+    g_mask = gt > 0
+
+    q_rows = np.where(np.any(q_mask, axis=1))[0]
+    g_rows = np.where(np.any(g_mask, axis=1))[0]
+
+    q_y0, q_y1 = q_rows[0], q_rows[-1]
+    g_y0, g_y1 = g_rows[0], g_rows[-1]
+
+    query_span = q_y1 - q_y0 + 1
+    gt_span = g_y1 - g_y0 + 1
+
+    # if GT is already shorter or equal, leave it unchanged
+    if gt_span <= query_span:
+        return gt.copy()
+
+    # keep only the top part of GT foreground band
+    new_g_y1 = g_y0 + query_span - 1
+
+    gt_new = gt.copy()
+    gt_new[new_g_y1 + 1:, :] = 0
+
+    return gt_new
+
+
 # # --------- Draw Table Ref on query ----------
 def tableAprilTagOrientation(img_bgr, rvec, center=None, axis_len=100, thickness=3):
     """
@@ -1593,6 +1629,9 @@ def run_pipeline(
         # gt = customSkeletonize(gt)
         gt = skeletonize(gt, method= "lee")
 
+        # crop the lower part of the gt to match query
+        gt = crop_gt_bottom_to_match_query_yspan(gt, query)
+
         # --- PCA ALIGNMENT ---
         aligned_gt, M, overlay, score = PCAlignment(query, gt, DT_Query, cq, vq, rq, draw_debug = True)
 
@@ -1627,33 +1666,33 @@ def run_pipeline(
     # ORB MATCHING LOOP
     # -------------------------
 
-    orb_overlay_init, orb_M, orb_overlay_final, orb_chamfer, orb_gt_aligned = ORBalignemnt(matched_prealigned_gt, query)
+    # orb_overlay_init, orb_M, orb_overlay_final, orb_chamfer, orb_gt_aligned = ORBalignemnt(matched_prealigned_gt, query)
 
-    print("\n[ORB-matching]")
-    print("ORB chamfer:", orb_chamfer)
-    orb_overlay_init = display_shapes(orb_overlay_init, w, h, 0.5)
-    if orb_overlay_init is not None:
-                save_path = os.path.join(
-                    project_root, "data/saved_images", 
-                    f"Image_ORB_{matched_id}_session_{session_timestamp}.png"
-                )
-                cv2.imwrite(save_path, orb_overlay_init)
+    # print("\n[ORB-matching]")
+    # print("ORB chamfer:", orb_chamfer)
+    # orb_overlay_init = display_shapes(orb_overlay_init, w, h, 0.5)
+    # if orb_overlay_init is not None:
+    #             save_path = os.path.join(
+    #                 project_root, "data/saved_images", 
+    #                 f"Image_ORB_{matched_id}_session_{session_timestamp}.png"
+    #             )
+    #             cv2.imwrite(save_path, orb_overlay_init)
 
-    if orb_chamfer > best_score:
-        print("\n[ORB-matching]: Divergence detected, back to the PCA estimate")
-        orb_gt_aligned = matched_prealigned_gt
-        # reset orb_M to identity (rigid 2D affine)
-        orb_M = np.array([
-            [1.0, 0.0, 0.0],
-            [0.0, 1.0, 0.0]
-        ], dtype=np.float32)
+    # if orb_chamfer > best_score:
+    #     print("\n[ORB-matching]: Divergence detected, back to the PCA estimate")
+    #     orb_gt_aligned = matched_prealigned_gt
+    #     # reset orb_M to identity (rigid 2D affine)
+    #     orb_M = np.array([
+    #         [1.0, 0.0, 0.0],
+    #         [0.0, 1.0, 0.0]
+    #     ], dtype=np.float32)
 
 
     # ------------ ICP Final Alignment ------------
 
     # Align partia shape to full shape, then invert transformation
     R, t, final_overlay, chamfer = ICPrefinement(
-        target_bin = orb_gt_aligned, source_bin = query, 
+        target_bin = matched_prealigned_gt, source_bin = query, 
         DT_query = DT_Query
     )
 
@@ -1678,11 +1717,13 @@ def run_pipeline(
     # get the final transform
     R_initial = T[:, :2]   # 2x2
     t_initial = T[:, 2]    # 2-vector
-    R_orb = orb_M[:, :2]
-    t_orb = orb_M[:, 2]
+    # R_orb = orb_M[:, :2]
+    # t_orb = orb_M[:, 2]
 
-    R_final = R_inv @ R_orb @ R_initial
-    t_final = R_inv @ (R_orb @ t_initial + t_orb) + t_inv
+    # R_final = R_inv @ R_orb @ R_initial
+    # t_final = R_inv @ (R_orb @ t_initial + t_orb) + t_inv
+    R_final = R_inv  @ R_initial
+    t_final = R_inv @ (t_initial) + t_inv
 
     # Table orientation 
     v_table = bl - tl            # direction vector
@@ -1912,8 +1953,13 @@ if __name__ == "__main__":
                 print(f"Saved frame number: {ns}")
             
             elif k == ord('v'):         # 'v' → activate Vision algorithm
-                print("Detection trigger received.")
-                mqtt_activation_event.set()
+                name = input("Enter ply name: ").strip()
+                if name:
+                    print(f"Detection trigger received for: {name}")
+                    ply_id = name   # store it somewhere accessible if needed
+                    mqtt_activation_event.set()
+                else:
+                    print("No name provided. Detection not triggered.")
 
             # coordinator-triggered termination
             if mqtt_termination_event.is_set():
@@ -1922,6 +1968,7 @@ if __name__ == "__main__":
             
             # coordinator-triggered activation
             if mqtt_activation_event.is_set():
+                img_path = os.path.join(cam_dir, ply_id + ".png")
                 frame = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
                 # run the Vision Pipeline
                 disp, proc = run_pipeline(
